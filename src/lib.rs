@@ -54,7 +54,7 @@ end
 }} def",
                       self.1));
         for pos in &self.0 {
-            try!(writeln!(wr, "{} {} p", pos.x, pos.y));
+            try!(writeln!(wr, "{:.4} {:.4} p", pos.x, pos.y));
         }
 
         Ok(())
