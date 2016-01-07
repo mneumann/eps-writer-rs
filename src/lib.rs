@@ -11,10 +11,21 @@ pub trait Shape {
     fn write_eps(&self, wr: &mut Write) -> io::Result<()>;
 }
 
+pub struct SetRGB(pub f32, pub f32, pub f32);
 pub struct Point(pub Position, pub f32);
 pub struct Points(pub Vec<Position>, pub f32);
 pub struct Line(pub Position, pub Position);
 pub struct Lines(pub Vec<(Position, Position)>);
+
+impl Shape for SetRGB {
+    fn bounds(&self) -> Bounds {
+        Bounds::new()
+    }
+
+    fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
+        writeln!(wr, "{:.2} {:.2} {:.2} setrgbcolor", self.0, self.1, self.2)
+    }
+}
 
 impl Shape for Point {
     fn bounds(&self) -> Bounds {
