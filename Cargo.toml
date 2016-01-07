@@ -1,0 +1,8 @@
+[package]
+name = "eps-writer"
+version = "0.0.1"
+authors = ["Michael Neumann <mneumann@ntecs.de>"]
+license = "MIT"
+repository = "https://github.com/mneumann/eps-writer-rs"
+description = "EPS (Encapsulated Postscript) writer"
+keywords = ["eps", "graphic"]
