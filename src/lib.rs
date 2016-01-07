@@ -157,10 +157,16 @@ impl EpsDocument {
 %%DocumentData: Clean7Bit
 %%Origin: 0 0
 %%BoundingBox: {} {} {} {}
+%%HiResBoundingBox: {} {} {} {}
 %%LanguageLevel: 2
 %%Pages: 1
 %%Page: 1 1
 "#,
+                      (bounds.min_x() - border_percent * width) as isize,
+                      (bounds.min_y() - border_percent * height) as isize,
+                      (bounds.max_x() + border_percent * width) as isize,
+                      (bounds.max_y() + border_percent * height) as isize,
+
                       bounds.min_x() - border_percent * width,
                       bounds.min_y() - border_percent * height,
                       bounds.max_x() + border_percent * width,
