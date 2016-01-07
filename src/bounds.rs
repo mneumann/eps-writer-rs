@@ -9,6 +9,13 @@ impl Bounds {
         Bounds { min_max: None }
     }
 
+    pub fn extend(&mut self, bounds: Bounds) {
+        if let Some((a, b)) = bounds.min_max {
+            self.add_position(a);
+            self.add_position(b);
+        }
+    }
+
     pub fn add_position(&mut self, pos: Position) {
         let mm = match self.min_max {
             None => (pos, pos),
@@ -16,10 +23,6 @@ impl Bounds {
         };
 
         self.min_max = Some(mm);
-    }
-
-    pub fn is_bounded(&self) -> bool {
-        self.min_max.is_some()
     }
 
     pub fn width(&self) -> f32 {

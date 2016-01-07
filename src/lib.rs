@@ -7,7 +7,7 @@ pub mod position;
 mod bounds;
 
 pub trait Shape {
-    fn bounding_box(&self) -> (Position, Position);
+    fn bounds(&self) -> Bounds;
     fn write_eps(&self, wr: &mut Write) -> io::Result<()>;
 }
 
@@ -15,8 +15,10 @@ pub struct Point(pub Position, pub f32);
 pub struct Line(pub Position, pub Position);
 
 impl Shape for Point {
-    fn bounding_box(&self) -> (Position, Position) {
-        (self.0, self.0)
+    fn bounds(&self) -> Bounds {
+        let mut b = Bounds::new();
+        b.add_position(self.0);
+        b
     }
 
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
@@ -29,8 +31,11 @@ impl Shape for Point {
 }
 
 impl Shape for Line {
-    fn bounding_box(&self) -> (Position, Position) {
-        (self.0.min(&self.1), self.0.max(&self.0))
+    fn bounds(&self) -> Bounds {
+        let mut b = Bounds::new();
+        b.add_position(self.0);
+        b.add_position(self.1);
+        b
     }
 
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
@@ -62,9 +67,7 @@ impl EpsDocument {
         let mut bounds = Bounds::new();
 
         for shape in &self.shapes {
-            let (min, max) = shape.bounding_box();
-            bounds.add_position(min);
-            bounds.add_position(max);
+            bounds.extend(shape.bounds());
         }
 
         let width = bounds.width().max(min_width);
