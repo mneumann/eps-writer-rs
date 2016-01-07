@@ -11,15 +11,20 @@ pub trait Shape {
     fn write_eps(&self, wr: &mut Write) -> io::Result<()>;
 }
 
-pub struct Point(pub Position);
+pub struct Point(pub Position, pub f32);
 pub struct Line(pub Position, pub Position);
 
 impl Shape for Point {
     fn bounding_box(&self) -> (Position, Position) {
         (self.0, self.0)
     }
+
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
-        Ok(())
+        writeln!(wr,
+                 "newpath {} {} {} 0 360 arc fill",
+                 self.0.x,
+                 self.0.y,
+                 self.1)
     }
 }
 
@@ -94,4 +99,3 @@ impl EpsDocument {
         writeln!(wr, "%%EOF")
     }
 }
-
