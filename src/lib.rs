@@ -1,10 +1,19 @@
-use std::io::{self, Write};
+extern crate nalgebra as na;
 
-pub use position::Position;
+use std::io::{self, Write};
 use bounds::Bounds;
 
-pub mod position;
 mod bounds;
+
+pub type Position = na::Pnt2<f32>;
+
+fn pmin(p1: &Position, p2: &Position) -> Position {
+    Position::new(p1.x.min(p2.x), p1.y.min(p2.y))
+}
+
+fn pmax(p1: &Position, p2: &Position) -> Position {
+    Position::new(p1.x.max(p2.x), p1.y.max(p2.y))
+}
 
 pub trait Shape {
     fn bounds(&self) -> Bounds;

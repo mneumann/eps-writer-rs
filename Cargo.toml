@@ -6,3 +6,7 @@ license = "MIT"
 repository = "https://github.com/mneumann/eps-writer-rs"
 description = "EPS (Encapsulated Postscript) writer"
 keywords = ["eps", "graphic"]
+
+[dependencies]
+
+nalgebra = "0.4"

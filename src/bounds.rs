@@ -1,4 +1,4 @@
-use super::position::Position;
+use super::{pmin, pmax, Position};
 
 pub struct Bounds {
     min_max: Option<(Position, Position)>,
@@ -19,7 +19,7 @@ impl Bounds {
     pub fn add_position(&mut self, pos: Position) {
         let mm = match self.min_max {
             None => (pos, pos),
-            Some(ref a) => pos.min_max(a),
+            Some((ref min, ref max)) => (pmin(&pos, min), pmax(&pos, max)),
         };
 
         self.min_max = Some(mm);
