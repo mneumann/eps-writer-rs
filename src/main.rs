@@ -8,8 +8,8 @@ pub mod position;
 mod bounds;
 
 trait Shape {
-    fn bounding_box(&self) -> (Position, Position); 
-    fn write_eps(&self, wr: &mut Write) -> io::Result<()>; 
+    fn bounding_box(&self) -> (Position, Position);
+    fn write_eps(&self, wr: &mut Write) -> io::Result<()>;
 }
 
 pub struct Point(pub Position);
@@ -26,13 +26,16 @@ impl Shape for Point {
 
 impl Shape for Line {
     fn bounding_box(&self) -> (Position, Position) {
-        (self.0.min(&self.1),
-         self.0.max(&self.0))
+        (self.0.min(&self.1), self.0.max(&self.0))
     }
 
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
-        writeln!(wr, "newpath {} {} moveto {} {} lineto stroke",
-        self.0.x, self.0.y, self.1.x, self.1.y)
+        writeln!(wr,
+                 "newpath {} {} moveto {} {} lineto stroke",
+                 self.0.x,
+                 self.0.y,
+                 self.1.x,
+                 self.1.y)
     }
 }
 
@@ -42,9 +45,7 @@ struct EpsDocument {
 
 impl EpsDocument {
     pub fn new() -> EpsDocument {
-        EpsDocument {
-            shapes: Vec::new(),
-        }
+        EpsDocument { shapes: Vec::new() }
     }
 
     pub fn add_shape(&mut self, shape: Box<Shape>) {
@@ -99,5 +100,5 @@ fn main() {
     let mut document = EpsDocument::new();
     document.add_shape(Box::new(Line(Position::new(0.0, 0.0), Position::new(1.0, 1.0))));
     let mut file = File::create("blah.eps").unwrap();
-    document.write_eps(&mut file, 100.0, 100.0 ).unwrap();
+    document.write_eps(&mut file, 100.0, 100.0).unwrap();
 }
