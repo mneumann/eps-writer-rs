@@ -12,6 +12,7 @@ pub trait Shape {
 }
 
 pub struct Point(pub Position, pub f32);
+pub struct Points(pub Vec<Position>, pub f32);
 pub struct Line(pub Position, pub Position);
 
 impl Shape for Point {
@@ -27,6 +28,36 @@ impl Shape for Point {
                  self.0.x,
                  self.0.y,
                  self.1)
+    }
+}
+
+impl Shape for Points {
+    fn bounds(&self) -> Bounds {
+        let mut b = Bounds::new();
+        for &pos in &self.0 {
+            b.add_position(pos);
+        }
+        b
+    }
+
+    fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
+        try!(writeln!(wr,
+                      "/p {{
+2 dict begin
+/y exch def
+/x exch def
+gsave
+newpath x y {} 0 360 \
+                       arc fill
+grestore
+end
+}} def",
+                      self.1));
+        for pos in &self.0 {
+            try!(writeln!(wr, "{} {} p", pos.x, pos.y));
+        }
+
+        Ok(())
     }
 }
 
