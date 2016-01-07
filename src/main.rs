@@ -1,7 +1,7 @@
 extern crate eps_writer;
 
 use std::fs::File;
-use eps_writer::{EpsDocument, Line, Position, Point, Points, SetRGB};
+use eps_writer::{EpsDocument, Line, Position, Point, Points, SetRGB, Vec2};
 
 fn main() {
     let mut document = EpsDocument::new();
@@ -17,6 +17,8 @@ fn main() {
     document.add_shape(Box::new(Points(vec![Position::new(0.25, 0.25),
                                             Position::new(0.75, 0.75)],
                                        0.25)));
+
+    document.transform(Vec2::new(0.0, 0.0), Vec2::new(100.0, 100.0));
 
     let mut file = File::create("test.eps").unwrap();
     document.write_eps(&mut file, 100.0, 100.0).unwrap();

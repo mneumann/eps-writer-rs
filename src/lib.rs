@@ -1,23 +1,30 @@
 extern crate nalgebra as na;
 
 use std::io::{self, Write};
-use bounds::Bounds;
+pub use bounds::Bounds;
+pub use na::Vec2;
 
-mod bounds;
+pub mod bounds;
 
 pub type Position = na::Pnt2<f32>;
 
-fn pmin(p1: &Position, p2: &Position) -> Position {
+fn pmin(p1: Position, p2: Position) -> Position {
     Position::new(p1.x.min(p2.x), p1.y.min(p2.y))
 }
 
-fn pmax(p1: &Position, p2: &Position) -> Position {
+fn pmax(p1: Position, p2: Position) -> Position {
     Position::new(p1.x.max(p2.x), p1.y.max(p2.y))
+}
+
+fn ptransform(p: Position, translation: Vec2<f32>, scale: Vec2<f32>) -> Position {
+    let n = p + translation;
+    Position::new(n.x * scale.x, n.y * scale.y)
 }
 
 pub trait Shape {
     fn bounds(&self) -> Bounds;
     fn write_eps(&self, wr: &mut Write) -> io::Result<()>;
+    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>);
 }
 
 pub struct SetRGB(pub f32, pub f32, pub f32);
@@ -34,6 +41,8 @@ impl Shape for SetRGB {
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
         writeln!(wr, "{:.2} {:.2} {:.2} setrgbcolor", self.0, self.1, self.2)
     }
+
+    fn transform(&mut self, _translation: Vec2<f32>, _scale: Vec2<f32>) {}
 }
 
 impl Shape for Point {
@@ -50,6 +59,10 @@ impl Shape for Point {
                  self.0.y,
                  self.1)
     }
+
+    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
+        self.0 = ptransform(self.0, translation, scale);
+    }
 }
 
 impl Shape for Points {
@@ -59,6 +72,12 @@ impl Shape for Points {
             b.add_position(pos);
         }
         b
+    }
+
+    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
+        for p in self.0.iter_mut() {
+            *p = ptransform(*p, translation, scale);
+        }
     }
 
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
@@ -92,6 +111,14 @@ impl Shape for Lines {
         b
     }
 
+    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
+        for &mut (ref mut p1, ref mut p2) in self.0.iter_mut() {
+            *p1 = ptransform(*p1, translation, scale);
+            *p2 = ptransform(*p2, translation, scale);
+        }
+    }
+
+
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
         try!(writeln!(wr,
                       "/l {{
@@ -122,6 +149,11 @@ impl Shape for Line {
         b
     }
 
+    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
+        self.0 = ptransform(self.0, translation, scale);
+        self.1 = ptransform(self.1, translation, scale);
+    }
+
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
         writeln!(wr,
                  "newpath {} {} moveto {} {} lineto stroke",
@@ -145,14 +177,26 @@ impl EpsDocument {
         self.shapes.push(shape);
     }
 
-    /// Write as Embedded Postscript (EPS)
-    pub fn write_eps(&self, wr: &mut Write, min_width: f32, min_height: f32) -> io::Result<()> {
+    pub fn get_bounds(&self) -> Bounds {
         // Determine extend of canvas
         let mut bounds = Bounds::new();
 
         for shape in &self.shapes {
             bounds.extend(shape.bounds());
         }
+
+        bounds
+    }
+
+    pub fn transform(&mut self, translate: Vec2<f32>, scale: Vec2<f32>) {
+        for shape in self.shapes.iter_mut() {
+            shape.transform(translate, scale);
+        }
+    }
+
+    /// Write as Embedded Postscript (EPS)
+    pub fn write_eps(&self, wr: &mut Write, min_width: f32, min_height: f32) -> io::Result<()> {
+        let bounds = self.get_bounds();
 
         let width = bounds.width().max(min_width);
         let height = bounds.height().max(min_height);
