@@ -22,9 +22,20 @@ fn ptransform(p: Position, translation: Vec2<f32>, scale: Vec2<f32>) -> Position
 }
 
 pub trait Shape {
-    fn bounds(&self) -> Bounds;
+    fn visit_pos(&self, cb: &mut FnMut(&Position));
+    fn visit_pos_mut(&mut self, cb: &mut FnMut(&mut Position));
+
+    fn bounds(&self) -> Bounds {
+        let mut b = Bounds::new();
+        self.visit_pos(&mut |p| b.add_position(*p));
+        b
+    }
+
+    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
+        self.visit_pos_mut(&mut |p| *p = ptransform(*p, translation, scale));
+    }
+
     fn write_eps(&self, wr: &mut Write) -> io::Result<()>;
-    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>);
 }
 
 pub struct SetRGB(pub f32, pub f32, pub f32);
@@ -35,22 +46,20 @@ pub struct Lines(pub Vec<(Position, Position)>);
 pub struct PolyLine(pub Vec<Position>);
 
 impl Shape for SetRGB {
-    fn bounds(&self) -> Bounds {
-        Bounds::new()
-    }
+    fn visit_pos(&self, _cb: &mut FnMut(&Position)) {}
+    fn visit_pos_mut(&mut self, _cb: &mut FnMut(&mut Position)) {}
 
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
         writeln!(wr, "{:.2} {:.2} {:.2} setrgbcolor", self.0, self.1, self.2)
     }
-
-    fn transform(&mut self, _translation: Vec2<f32>, _scale: Vec2<f32>) {}
 }
 
 impl Shape for Point {
-    fn bounds(&self) -> Bounds {
-        let mut b = Bounds::new();
-        b.add_position(self.0);
-        b
+    fn visit_pos(&self, cb: &mut FnMut(&Position)) {
+        cb(&self.0);
+    }
+    fn visit_pos_mut(&mut self, cb: &mut FnMut(&mut Position)) {
+        cb(&mut self.0);
     }
 
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
@@ -60,24 +69,17 @@ impl Shape for Point {
                  self.0.y,
                  self.1)
     }
-
-    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
-        self.0 = ptransform(self.0, translation, scale);
-    }
 }
 
 impl Shape for Points {
-    fn bounds(&self) -> Bounds {
-        let mut b = Bounds::new();
-        for &pos in &self.0 {
-            b.add_position(pos);
+    fn visit_pos(&self, cb: &mut FnMut(&Position)) {
+        for p in &self.0 {
+            cb(p);
         }
-        b
     }
-
-    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
-        for p in self.0.iter_mut() {
-            *p = ptransform(*p, translation, scale);
+    fn visit_pos_mut(&mut self, cb: &mut FnMut(&mut Position)) {
+        for p in &mut self.0 {
+            cb(p);
         }
     }
 
@@ -103,19 +105,16 @@ end
 }
 
 impl Shape for Lines {
-    fn bounds(&self) -> Bounds {
-        let mut b = Bounds::new();
-        for &(p1, p2) in &self.0 {
-            b.add_position(p1);
-            b.add_position(p2);
+    fn visit_pos(&self, cb: &mut FnMut(&Position)) {
+        for &(ref p1, ref p2) in &self.0 {
+            cb(p1);
+            cb(p2);
         }
-        b
     }
-
-    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
-        for &mut (ref mut p1, ref mut p2) in self.0.iter_mut() {
-            *p1 = ptransform(*p1, translation, scale);
-            *p2 = ptransform(*p2, translation, scale);
+    fn visit_pos_mut(&mut self, cb: &mut FnMut(&mut Position)) {
+        for &mut (ref mut p1, ref mut p2) in &mut self.0 {
+            cb(p1);
+            cb(p2);
         }
     }
 
@@ -142,16 +141,13 @@ end
 }
 
 impl Shape for Line {
-    fn bounds(&self) -> Bounds {
-        let mut b = Bounds::new();
-        b.add_position(self.0);
-        b.add_position(self.1);
-        b
+    fn visit_pos(&self, cb: &mut FnMut(&Position)) {
+        cb(&self.0);
+        cb(&self.1);
     }
-
-    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
-        self.0 = ptransform(self.0, translation, scale);
-        self.1 = ptransform(self.1, translation, scale);
+    fn visit_pos_mut(&mut self, cb: &mut FnMut(&mut Position)) {
+        cb(&mut self.0);
+        cb(&mut self.1);
     }
 
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
@@ -165,17 +161,14 @@ impl Shape for Line {
 }
 
 impl Shape for PolyLine {
-    fn bounds(&self) -> Bounds {
-        let mut b = Bounds::new();
-        for &p in &self.0 {
-            b.add_position(p);
+    fn visit_pos(&self, cb: &mut FnMut(&Position)) {
+        for p in &self.0 {
+            cb(p);
         }
-        b
     }
-
-    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
-        for p in self.0.iter_mut() {
-            *p = ptransform(*p, translation, scale);
+    fn visit_pos_mut(&mut self, cb: &mut FnMut(&mut Position)) {
+        for p in &mut self.0 {
+            cb(p);
         }
     }
 
