@@ -32,6 +32,7 @@ pub struct Point(pub Position, pub f32);
 pub struct Points(pub Vec<Position>, pub f32);
 pub struct Line(pub Position, pub Position);
 pub struct Lines(pub Vec<(Position, Position)>);
+pub struct PolyLine(pub Vec<Position>);
 
 impl Shape for SetRGB {
     fn bounds(&self) -> Bounds {
@@ -118,7 +119,6 @@ impl Shape for Lines {
         }
     }
 
-
     fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
         try!(writeln!(wr,
                       "/l {{
@@ -161,6 +161,36 @@ impl Shape for Line {
                  self.0.y,
                  self.1.x,
                  self.1.y)
+    }
+}
+
+impl Shape for PolyLine {
+    fn bounds(&self) -> Bounds {
+        let mut b = Bounds::new();
+        for &p in &self.0 {
+            b.add_position(p);
+        }
+        b
+    }
+
+    fn transform(&mut self, translation: Vec2<f32>, scale: Vec2<f32>) {
+        for p in self.0.iter_mut() {
+            *p = ptransform(*p, translation, scale);
+        }
+    }
+
+    fn write_eps(&self, wr: &mut Write) -> io::Result<()> {
+        match self.0.split_first() {
+            Some((first, tail)) if tail.len() > 0 => {
+                try!(write!(wr, "newpath {:.4} {:.4} moveto ", first.x, first.y));
+                for l in tail {
+                    try!(write!(wr, "{:.4} {:.4} lineto ", l.x, l.y));
+                }
+                try!(writeln!(wr, "stroke"));
+            }
+            _ => {}
+        }
+        Ok(())
     }
 }
 
